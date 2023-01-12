@@ -26,9 +26,9 @@ import javax.swing.JFileChooser;
 
 final class Director {
 
+	static final char A_ASK = 'A', A_IGNORE = 'I', A_MOVE = 'M', A_RUN = 'R';
 	private static final File F_CFG = new File("director.cfg"), F_TMP = new File(System.getenv("TMP"), "DownDirector");
 	private static final Path P_DOWN = Path.of(System.getProperty("user.home"), "Downloads");
-	private static final char A_ASK = 'A', A_IGNORE = 'I', A_MOVE = 'M', A_RUN = 'R';
 
 	private void start() throws IOException, AWTException, InterruptedException {
 		TrayIcon ti = new TrayIcon(ImageIO.read(Director.class.getResource("/icon.png")), "Download Director");
@@ -63,6 +63,7 @@ final class Director {
 
 		P_DOWN.register(ws, StandardWatchEventKinds.ENTRY_MODIFY);
 		File dlDir = P_DOWN.toFile();
+		ActionChooser ac = new ActionChooser();
 		while (true) {
 			ws.take();
 			for (File f : dlDir.listFiles()) {
@@ -87,7 +88,7 @@ final class Director {
 						Desktop.getDesktop().open(tmp);
 						break;
 					default:
-						// TODO Ask user what do.
+						props.put(ext, ac.getResponseFor(ext));
 					}
 				}
 			}
