@@ -1,6 +1,7 @@
 package nbradham.dldirect;
 
 import java.awt.AWTException;
+import java.awt.Desktop;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.SystemTray;
@@ -83,7 +84,7 @@ final class Director {
 					case A_RUN:
 						File tmp = new File(F_TMP, System.currentTimeMillis() + f.getName());
 						moveFile(f, tmp);
-						Runtime.getRuntime().exec(new String[] { tmp.toString() });
+						Desktop.getDesktop().open(tmp);
 						break;
 					default:
 						// TODO Ask user what do.
