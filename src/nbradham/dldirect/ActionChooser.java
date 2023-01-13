@@ -14,6 +14,7 @@ final class ActionChooser {
 	private final JFrame frame = new JFrame("Choose Action for File Type");
 	private final JLabel prompt = new JLabel();
 	private final ActionListener listener = e -> {
+		frame.setVisible(false);
 		response = e.getActionCommand().charAt(0);
 		notify();
 	};
@@ -52,9 +53,12 @@ final class ActionChooser {
 		SwingUtilities.invokeLater(() -> {
 			prompt.setText("What would you like to do with \"" + type + "\" files?");
 			frame.setVisible(true);
+			frame.requestFocus();
 		});
 		wait();
-		//TODO Handle move.
-		return String.valueOf(response);
+		String dir = "";
+		if (response == Director.A_MOVE)
+			dir = Director.getSaveLoc(type).getAbsolutePath();
+		return String.valueOf(response) + dir;
 	}
 }

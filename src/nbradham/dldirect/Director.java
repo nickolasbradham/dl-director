@@ -29,6 +29,7 @@ final class Director {
 	static final char A_ASK = 'A', A_IGNORE = 'I', A_MOVE = 'M', A_RUN = 'R';
 	private static final File F_CFG = new File("director.cfg"), F_TMP = new File(System.getenv("TMP"), "DownDirector");
 	private static final Path P_DOWN = Path.of(System.getProperty("user.home"), "Downloads");
+	private static final JFileChooser jfc = new JFileChooser();
 
 	private void start() throws IOException, AWTException, InterruptedException {
 		TrayIcon ti = new TrayIcon(ImageIO.read(Director.class.getResource("/icon.png")), "Download Director");
@@ -72,10 +73,7 @@ final class Director {
 					String act = props.getProperty(ext);
 					switch (act.charAt(0)) {
 					case A_ASK:
-						JFileChooser jfc = new JFileChooser();
-						jfc.setDialogTitle("Choose location for " + s);
-						jfc.showSaveDialog(null);
-						moveFile(f, jfc.getSelectedFile());
+						moveFile(f, getSaveLoc(s));
 						break;
 					case A_IGNORE:
 						break;
@@ -98,6 +96,12 @@ final class Director {
 	private static void moveFile(File src, File dest) throws FileNotFoundException, IOException {
 		FileChannel.open(dest.toPath(), StandardOpenOption.CREATE)
 				.transferFrom(Channels.newChannel(new FileInputStream(src)), 0, Long.MAX_VALUE);
+	}
+
+	static File getSaveLoc(String item) {
+		jfc.setDialogTitle("Choose location for " + item);
+		jfc.showSaveDialog(null);
+		return jfc.getSelectedFile();
 	}
 
 	public static void main(String[] args) throws IOException, AWTException, InterruptedException {
