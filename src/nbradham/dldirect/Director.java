@@ -81,12 +81,16 @@ final class Director {
 					if (!origin.equals(alt))
 						try {
 							moveFile(alt, origin);
-							String name = origin.getName(), ext = name.substring(name.lastIndexOf('.'));
-							if (JOptionPane.showConfirmDialog(null,
-									"Would you like to change how \"" + ext + "\" files are handled?",
-									"Change Handling?", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
-								getResponse(ext, props);
-						} catch (IOException | InterruptedException e1) {
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+					String name = origin.getName(), ext = name.substring(name.lastIndexOf('.'));
+					if (JOptionPane.showConfirmDialog(null,
+							"Would you like to change how \"" + ext + "\" files are handled?", "Change Handling?",
+							JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
+						try {
+							getResponse(ext, props);
+						} catch (InterruptedException e1) {
 							e1.printStackTrace();
 						}
 				}
