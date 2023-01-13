@@ -64,6 +64,7 @@ final class ActionChooser {
 	}
 
 	private void sendResponse(char resp) {
+		frame.dispose();
 		response = resp;
 		synchronized (lock) {
 			lock.notify();
@@ -83,11 +84,6 @@ final class ActionChooser {
 		File dir = null;
 		if (response == Director.A_MOVE)
 			dir = Director.getSaveLoc(type, JFileChooser.DIRECTORIES_ONLY);
-
 		return String.valueOf(response) + (dir == null ? "" : dir.getAbsolutePath());
-	}
-
-	final void dispose() {
-		SwingUtilities.invokeLater(() -> frame.dispose());
 	}
 }

@@ -7,6 +7,8 @@ import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.TrayIcon.MessageType;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -23,6 +25,7 @@ import java.util.Properties;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 final class Director {
 
@@ -70,11 +73,28 @@ final class Director {
 			props.store(new FileOutputStream(F_CFG), "Careful. This file is sensitive.");
 		}
 
-		// TODO Setup undo.
+		ti.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (e.getButton() == MouseEvent.BUTTON1) {
+					File origin = last.origin(), alt = last.alt();
+					if (!origin.equals(alt))
+						try {
+							moveFile(alt, origin);
+							String name = origin.getName(), ext = name.substring(name.lastIndexOf('.'));
+							if (JOptionPane.showConfirmDialog(null,
+									"Would you like to change how \"" + ext + "\" files are handled?",
+									"Change Handling?", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
+								getResponse(ext, props);
+						} catch (IOException | InterruptedException e1) {
+							e1.printStackTrace();
+						}
+				}
+			}
+		});
 
 		P_DOWN.register(ws, StandardWatchEventKinds.ENTRY_MODIFY);
 		File dlDir = P_DOWN.toFile();
-		ActionChooser ac = new ActionChooser();
 
 		while (true) {
 			try {
@@ -106,19 +126,24 @@ final class Director {
 					}
 					last = new FileAction(fs[i], to);
 				} else {
-					String resp = ac.getResponseFor(ext);
-					if (!resp.equals(String.valueOf(ActionChooser.NO_RESPONSE))) {
-						props.put(ext, resp);
+					if (getResponse(ext, props))
 						i--;
-					}
 				}
 			}
 		}
-		ac.dispose();
 	}
 
 	private static void moveFile(File src, File dest) throws FileNotFoundException, IOException {
 		Files.move(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+	}
+
+	private static boolean getResponse(String ext, Properties props) throws InterruptedException {
+		String resp = new ActionChooser().getResponseFor(ext);
+		if (!resp.equals(String.valueOf(ActionChooser.NO_RESPONSE))) {
+			props.put(ext, resp);
+			return true;
+		}
+		return false;
 	}
 
 	static File getSaveLoc(String item, int mode) {
