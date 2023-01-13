@@ -66,10 +66,13 @@ final class Director {
 					MessageType.INFO);
 			props.store(new FileOutputStream(F_CFG), "Careful. This file is sensitive.");
 		}
+		
+		//TODO Setup undo.
 
 		P_DOWN.register(ws, StandardWatchEventKinds.ENTRY_MODIFY);
 		File dlDir = P_DOWN.toFile();
 		ActionChooser ac = new ActionChooser();
+
 		while (true) {
 			try {
 				ws.take();
