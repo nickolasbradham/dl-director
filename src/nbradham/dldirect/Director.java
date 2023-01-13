@@ -31,10 +31,13 @@ final class Director {
 	private static final Path P_DOWN = Path.of(System.getProperty("user.home"), "Downloads");
 	private static final JFileChooser jfc = new JFileChooser();
 
+	private FileAction last;
 	private boolean run = true;
 
 	private void start() throws IOException, AWTException, InterruptedException {
 		F_TMP.mkdirs();
+		for (File f : F_TMP.listFiles())
+			f.delete();
 
 		TrayIcon ti = new TrayIcon(ImageIO.read(Director.class.getResource("/icon.png")), "Download Director");
 		ti.setImageAutoSize(true);
@@ -66,8 +69,8 @@ final class Director {
 					MessageType.INFO);
 			props.store(new FileOutputStream(F_CFG), "Careful. This file is sensitive.");
 		}
-		
-		//TODO Setup undo.
+
+		// TODO Setup undo.
 
 		P_DOWN.register(ws, StandardWatchEventKinds.ENTRY_MODIFY);
 		File dlDir = P_DOWN.toFile();
@@ -86,20 +89,23 @@ final class Director {
 				String s = fs[i].getName(), ext = s.substring(s.lastIndexOf('.'));
 				if (props.containsKey(ext)) {
 					String act = props.getProperty(ext);
+					File to = null;
 					switch (act.charAt(0)) {
 					case A_ASK:
-						moveFile(fs[i], getSaveLoc(s, JFileChooser.FILES_ONLY));
+						moveFile(fs[i], to = getSaveLoc(s, JFileChooser.FILES_ONLY));
 						break;
 					case A_IGNORE:
+						last = new FileAction(fs[i], to = fs[i]);
 						break;
 					case A_MOVE:
-						moveFile(fs[i], new File(act.substring(1)));
+						moveFile(fs[i], to = new File(act.substring(1)));
 						break;
 					case A_RUN:
-						File tmp = new File(F_TMP, System.currentTimeMillis() + fs[i].getName());
-						moveFile(fs[i], tmp);
-						Desktop.getDesktop().open(tmp);
+						to = new File(F_TMP, System.currentTimeMillis() + fs[i].getName());
+						moveFile(fs[i], to);
+						Desktop.getDesktop().open(to);
 					}
+					last = new FileAction(fs[i], to);
 				} else {
 					String resp = ac.getResponseFor(ext);
 					if (!resp.equals(String.valueOf(ActionChooser.NO_RESPONSE))) {
