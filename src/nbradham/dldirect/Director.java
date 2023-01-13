@@ -34,6 +34,8 @@ final class Director {
 	private static final Path P_DOWN = Path.of(System.getProperty("user.home"), "Downloads");
 	private static final JFileChooser jfc = new JFileChooser();
 
+	private final Properties props = new Properties();
+
 	private FileAction last;
 	private boolean run = true;
 
@@ -63,14 +65,13 @@ final class Director {
 		ti.setPopupMenu(pm);
 		st.add(ti);
 
-		Properties props = new Properties();
 		if (F_CFG.exists())
 			props.load(new FileInputStream(F_CFG));
 		else {
 			ti.displayMessage("Download Director",
 					"If you ever want to undo or change an automatic action, just click me in the system tray.",
 					MessageType.INFO);
-			props.store(new FileOutputStream(F_CFG), "Careful. This file is sensitive.");
+			storeProps();
 		}
 
 		ti.addMouseListener(new MouseAdapter() {
@@ -89,8 +90,8 @@ final class Director {
 							"Would you like to change how \"" + ext + "\" files are handled?", "Change Handling?",
 							JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
 						try {
-							getResponse(ext, props);
-						} catch (InterruptedException e1) {
+							getResponse(ext);
+						} catch (InterruptedException | IOException e1) {
 							e1.printStackTrace();
 						}
 				}
@@ -130,24 +131,29 @@ final class Director {
 					}
 					last = new FileAction(fs[i], to);
 				} else {
-					if (getResponse(ext, props))
+					if (getResponse(ext))
 						i--;
 				}
 			}
 		}
 	}
 
-	private static void moveFile(File src, File dest) throws FileNotFoundException, IOException {
-		Files.move(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+	private void storeProps() throws FileNotFoundException, IOException {
+		props.store(new FileOutputStream(F_CFG), "Careful. This file is sensitive.");
 	}
 
-	private static boolean getResponse(String ext, Properties props) throws InterruptedException {
+	private boolean getResponse(String ext) throws InterruptedException, FileNotFoundException, IOException {
 		String resp = new ActionChooser().getResponseFor(ext);
 		if (!resp.equals(String.valueOf(ActionChooser.NO_RESPONSE))) {
 			props.put(ext, resp);
+			storeProps();
 			return true;
 		}
 		return false;
+	}
+
+	private static void moveFile(File src, File dest) throws FileNotFoundException, IOException {
+		Files.move(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
 	}
 
 	static File getSaveLoc(String item, int mode) {
