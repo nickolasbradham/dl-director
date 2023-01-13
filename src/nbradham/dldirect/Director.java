@@ -95,14 +95,13 @@ final class Director {
 						moveFile(fs[i], to = getSaveLoc(s, JFileChooser.FILES_ONLY));
 						break;
 					case A_IGNORE:
-						last = new FileAction(fs[i], to = fs[i]);
+						to = fs[i];
 						break;
 					case A_MOVE:
 						moveFile(fs[i], to = new File(act.substring(1)));
 						break;
 					case A_RUN:
-						to = new File(F_TMP, System.currentTimeMillis() + fs[i].getName());
-						moveFile(fs[i], to);
+						moveFile(fs[i], to = new File(F_TMP, System.currentTimeMillis() + fs[i].getName()));
 						Desktop.getDesktop().open(to);
 					}
 					last = new FileAction(fs[i], to);
