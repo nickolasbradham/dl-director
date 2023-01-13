@@ -12,11 +12,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchService;
 import java.util.Properties;
@@ -31,7 +31,11 @@ final class Director {
 	private static final Path P_DOWN = Path.of(System.getProperty("user.home"), "Downloads");
 	private static final JFileChooser jfc = new JFileChooser();
 
+	private boolean run = true;
+
 	private void start() throws IOException, AWTException, InterruptedException {
+		F_TMP.mkdirs();
+
 		TrayIcon ti = new TrayIcon(ImageIO.read(Director.class.getResource("/icon.png")), "Download Director");
 		ti.setImageAutoSize(true);
 
@@ -39,6 +43,7 @@ final class Director {
 		MenuItem mi = new MenuItem("Exit");
 		WatchService ws = FileSystems.getDefault().newWatchService();
 		mi.addActionListener(e -> {
+			run = false;
 			try {
 				ws.close();
 			} catch (IOException e1) {
@@ -66,40 +71,51 @@ final class Director {
 		File dlDir = P_DOWN.toFile();
 		ActionChooser ac = new ActionChooser();
 		while (true) {
-			ws.take();
-			for (File f : dlDir.listFiles()) {
-				String s = f.getName(), ext = s.substring(s.lastIndexOf('.'));
+			try {
+				ws.take();
+			} catch (ClosedWatchServiceException e) {
+				if (run)
+					e.printStackTrace();
+				break;
+			}
+			File[] fs = dlDir.listFiles();
+			for (byte i = 0; i < fs.length; i++) {
+				String s = fs[i].getName(), ext = s.substring(s.lastIndexOf('.'));
 				if (props.containsKey(ext)) {
 					String act = props.getProperty(ext);
 					switch (act.charAt(0)) {
 					case A_ASK:
-						moveFile(f, getSaveLoc(s));
+						moveFile(fs[i], getSaveLoc(s, JFileChooser.FILES_ONLY));
 						break;
 					case A_IGNORE:
 						break;
 					case A_MOVE:
-						moveFile(f, new File(act.substring(1)));
+						moveFile(fs[i], new File(act.substring(1)));
 						break;
 					case A_RUN:
-						File tmp = new File(F_TMP, System.currentTimeMillis() + f.getName());
-						moveFile(f, tmp);
+						File tmp = new File(F_TMP, System.currentTimeMillis() + fs[i].getName());
+						moveFile(fs[i], tmp);
 						Desktop.getDesktop().open(tmp);
-						break;
-					default:
-						props.put(ext, ac.getResponseFor(ext));
+					}
+				} else {
+					String resp = ac.getResponseFor(ext);
+					if (!resp.equals(String.valueOf(ActionChooser.NO_RESPONSE))) {
+						props.put(ext, resp);
+						i--;
 					}
 				}
 			}
 		}
+		ac.dispose();
 	}
 
 	private static void moveFile(File src, File dest) throws FileNotFoundException, IOException {
-		FileChannel.open(dest.toPath(), StandardOpenOption.CREATE)
-				.transferFrom(Channels.newChannel(new FileInputStream(src)), 0, Long.MAX_VALUE);
+		Files.move(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
 	}
 
-	static File getSaveLoc(String item) {
+	static File getSaveLoc(String item, int mode) {
 		jfc.setDialogTitle("Choose location for " + item);
+		jfc.setFileSelectionMode(mode);
 		jfc.showSaveDialog(null);
 		return jfc.getSelectedFile();
 	}
